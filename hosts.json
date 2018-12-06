@@ -1,0 +1,19 @@
+{
+    "hosts": [
+        {
+            "hostName": "Main Computer",
+            "macAddress": "FF:00:FF:00:FF:00",
+            "ipAddress": "192.168.1.00"
+        },
+        {
+            "hostName": "Second Computer",
+            "macAddress": "FF:00:FF:00:FF:00",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "hostName": "Server Computer",
+            "macAddress": "FF:00:FF:00:FF:00",
+            "ipAddress": "192.168.1.100"
+        }
+    ]
+}

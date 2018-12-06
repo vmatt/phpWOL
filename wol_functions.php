@@ -145,7 +145,7 @@ function WakeOnLAN($macAddress, $hostAddress, $hostPort = 9)
 }
 
 
-function wakeUp($mac, $broadcastIP)
+function wakeUp($mac, $broadcastIP, &$msg)
 {
     try
     {
@@ -154,12 +154,14 @@ function wakeUp($mac, $broadcastIP)
     catch (SocketConnectionException $e)
     {
     // socket connection failed
-    echo 'The socket connection could not be established.', "\n", $e;
+    //echo 'The socket connection could not be established.', "\n", $e;
+    $msg = 'The socket connection could not be established.';
     }
     catch (WakeOnLANException $e)
     {
     // wake on lan request failed
-    echo 'The Wake On LAN packet was not sent properly.', "\n", $e;
+    //echo 'The Wake On LAN packet was not sent properly.', "\n", $e;
+    $msg = 'The Wake On LAN packet was not sent properly.';
     }
 }
 ?>
