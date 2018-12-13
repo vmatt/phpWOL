@@ -19,7 +19,6 @@ if (isset($data['hostName']) && isset($data['ipAddress']) && isset($data['macAdd
     }
     echo json_encode($WOLresponse);
 } else {
-    $WOLresponse = new stdClass();
     $WOLresponse->status = false;
     $WOLresponse->error = 'Invalid request.';
     http_response_code(400);
