@@ -1,161 +1,126 @@
-<?php
- 
-/**
- * exception class for failed socket connection
+ <?php
+/******************************************************************
+ * 
+ * Projectname:   PHP_WOL - PHP Wake On Lan
+ * Version:       1.0
+ * Author:        Radovan Janjic <hi@radovanjanjic.com>
+ * Last modified: 29 09 2014
+ * Copyright (C): 2014 IT-radionica.com, All Rights Reserved
+ * 
+ * GNU General Public License (Version 2, June 1991)
  *
+ * This program is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free
+ * Software Foundation; either version 2 of the License,
+ * or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU General Public License
+ * for more details.
+ * 
+ ******************************************************************/
+/** Example:
+ * PHP_WOL::send('192.168.1.2', '01:23:45:67:89:ab', 9);
  */
-class SocketConnectionException extends Exception { }
- 
-/**
- * exception class for failed wake on lan request
- *
- */
-class WakeOnLANException extends Exception { }
- 
-/**
- * a function to wake any computer using "Wake on LAN"
- *
- * @link http://en.wikipedia.org/wiki/Wake-on-LAN
- * @author Toni Uebernickel <tuebernickel@whitestarprogramming.de>
- * @copyright http://sam.zoy.org/wtfpl/
- *
- * @version 1.0
- * @todo 1.1 Check for valid (reachable) host.
- * @todo 1.1 Validate the given MAC Address.
- *
- * @example WakeOnLAN('13:37:13:37:13:37', 'host.domain');
- * @example WakeOnLAN('13:37:13:37:13:37', '10.65.0.151', 7);
- *
- * @see http://www.php.net/fsockopen
- * @throws SocketConnectionException if connection could not be established ErrorCode: defined by fsockopen
- * @throws WakeOnLANException if amount of sent bytes is not 102 (needed for WOL) ErrorCode: E_ERROR
- *
- * @param string $macAddress The MAC address to send the WOL package for.
- * @param string $hostAddress The address to which the WOL request will be sent (may be an IP or any hostname).
- * @param int $hostPort The destination port on which the WOL request will be sent.
- *
- * @return bool Returns true if Wake On LAN magic packet was sent successfully.
- */
-function WakeOnLAN($macAddress, $hostAddress, $hostPort = 9)
-{
-  // check for given parameters and exit if either is not given
-  if (!$macAddress or !$hostAddress or !intval($hostPort))
-  {
-    return false;
-  }
- 
-  // add UDP protocol handler prefix
-  $hostAddress = 'udp://' . $hostAddress;
- 
-  /**
-   * The data string that will be sent to the destination host.
-   */
-  $WakeOnLANSequence = null;
- 
-  /**
-   * Error variables set if socket connection fails.
-   * Both are passed by reference to fsockopen().
-   */
-  $errNo = $errMessage = null;
- 
-  /**
-   * Open the socket through which the Wake On LAN data sequence will be sent.
-   *
-   * Surpressing E_NOTICE || E_WARNING of fsockopen() due to error handling with exceptions.
-   */
-  if ($socket = @fsockopen($hostAddress, $hostPort, $errNo, $errMessage))
-  {
-    /**
-     * Initialize the first six bytes for the Wake On LAN magic packet.
-     *
-     * @see http://en.wikipedia.org/wiki/Wake-on-LAN#Magic_Packet
-     */
-    $WakeOnLANSequence = "\xFF\xFF\xFF\xFF\xFF\xFF";
- 
-    /**
-     * Strip MAC address to an hexidecimal string.
-     *
-     * @see http://en.wikipedia.org/wiki/MAC_address
-     *
-     * This call removes all characters but 0 to 9 and A to F (a to f).
-     */
-    $macAddress = preg_replace('/[^0-9A-Fa-f]/', '', $macAddress);
- 
-    /**
-     * Encode the MAC address into ASCII characters.
-     *
-     * substr(): get each separated set of the MAC address
-     * hexdec(): convert the set to decimal values used by ASCII
-     * chr(): convert the decimal value into the ASCII character
-     *
-     * @see http://en.wikipedia.org/wiki/ASCII
-     */
-    $macAddressHex = NULL;
-    for ($i = 0; $i < 12; $i += 2)
-    {
-      $macAddressHex .= chr(hexdec(substr($macAddress, $i, 2)));
-    }
-    
- 
-    /**
-     * Complete the magic packet by adding the MAC address 16 times after the initialized six byte sequence.
-     *
-     * @see http://en.wikipedia.org/wiki/Wake-on-LAN#Magic_Packet
-     */
-    for ($i = 0; $i < 16; $i++)
-    {
-      $WakeOnLANSequence .= $macAddressHex;
-    }
- 
-    /**
-     * Send the magic packet through the open socket and save the amount of sent bytes.
-     *
-     * Surpressing E_NOTICE || E_WARNING again due to error handling.
-     */
-    $bytesSent = @fputs($socket, $WakeOnLANSequence);
- 
-    /**
-     * Finally close the socket and once again surpress any E_NOTICE || E_WARNING.
-     */
-    if (@fclose($socket) and $bytesSent === 102)
-    {
-      /**
-       * This returns the successful delivery of the Wake On LAN magic packet described below.
-       * However, this does not ensure the requested host is now up and running.
-       *
-       * If the host did not wake up:
-       * Check your NAT and any other network configuration between this script server and the destination host.
-       * Check the hosts' configuration about Wake On LAN.
-       *
-       * @see http://en.wikipedia.org/wiki/Wake-on-LAN#Magic_Packet
-       */
-      return true;
-    }
-    else
-    {
-      // The byte sequence is corrupt or was not sent properly.
-      throw new WakeOnLANException('Wake On LAN failed, sent ' . $bytesSent . ' out of 102 bytes', E_ERROR);
-    }
-  }
-  else
-  {
-    // The socket could not be opened.
-    throw new SocketConnectionException('Could not open socket to ' . $hostAddress . ' on port ' . $hostPort . '. Error: ' . $errMessage, $errNo);
-  }
-}
 
+class PHP_WOL {
+	
+	/** Socket
+	 * @var resource
+	 */
+	private static $socket = 0;
+	
+	/** Error code
+	 * @var integer
+	 */
+	private static $errCode = 0;
+	
+	/** Error description
+	 * @var string
+	 */
+	private static $errMsg = NULL;
+	
+	/** Send WOL package
+	 * @param	string		$addr		- IP address
+	 * @param	string		$mac		- Media access control address (MAC)
+	 * @param	integer		$port		- Port number at which the data will be sent
+	 * @return	boolean
+	 */
+	public static function send($addr, $mac, $port = 9) {
+		// Throw exception if extension is not loaded
+		if (!extension_loaded('sockets')) {
+			self::throwError("Error: The sockets extension is not loaded!");
+		}
+
+		// Check if $addr is valid IP, if not try to resolve host
+		if (!filter_var($addr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+			// Try to get the IPv4 address of a given host name
+			$originalAddr = gethostbyname($addr);
+			if ($originalAddr == $addr) {
+				self::throwError('Error: Domain name is unresolvable or IP address is invalid!');
+			} else {
+				$addr = $originalAddr;
+			}
+		}
+		
+		$macHex = str_replace(array(':', '-'), NULL, $mac);
+		
+		// Throw exception if mac address is not valid
+		if (!ctype_xdigit($macHex) || strlen($macHex) != 12) {
+			self::throwError('Error: Mac address is invalid!');
+		}
+		
+		// Magic packet
+		$packet = str_repeat(chr(255), 6) . str_repeat(pack('H12', $macHex), 16);
+		
+		// Send to the broadcast address using UDP
+		self::$socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+		
+		if (is_resource(self::$socket)) {
+		
+			// Set socket option
+			if (!socket_set_option(self::$socket, SOL_SOCKET, SO_BROADCAST, TRUE)) {
+				self::throwError();
+			}
+			
+			// Send magic packet
+			if (socket_sendto(self::$socket, $packet, strlen($packet), 0, $addr, $port) !== FALSE) {
+				socket_close(self::$socket);
+				return TRUE;
+			}
+		}
+		self::throwError();
+	}
+	
+	/** Throw Last Error
+	 * @param	string		$msg	- Error message
+	 * @return	void
+	 */
+	private static function throwError($msg = NULL) {
+		// Take last error if err msg is empty
+		if (empty($msg)) {
+			self::$errCode = socket_last_error(self::$socket);
+			self::$errMsg = socket_strerror(self::$errCode);
+			$msg = "Error (" . self::$errCode . "): " . self::$errMsg;
+		}
+		throw new Exception($msg);
+	}
+}
 
 function wakeUp($mac, $broadcastIP, &$msg)
 {
     try
     {
-    WakeOnLAN($mac, $broadcastIP);
+    PHP_WOL::send($broadcastIP,$mac);
     }
     catch (SocketConnectionException $e)
     {
     // socket connection failed
     //echo 'The socket connection could not be established.', "\n", $e;
-    $msg = 'The socket connection could not be established.';
+    $msg = 'The socket connection could not be established.'.$e;
     }
     catch (WakeOnLANException $e)
     {
@@ -164,4 +129,3 @@ function wakeUp($mac, $broadcastIP, &$msg)
     $msg = 'The Wake On LAN packet was not sent properly.';
     }
 }
-?>
