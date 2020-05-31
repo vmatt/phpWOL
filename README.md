@@ -1,7 +1,7 @@
 # phpWOL
-Forked from [castab/phpWOL](https://github.com/castab/phpWOL)
+Forked from [castab/phpWOL](https://github.com/castab/phpWOL). Replaced the backend with PHP_WOL developed by [Radovan Janjic](https://radovanjanjic.com)
 ## Modifications
-- Cannot send packages to xxx.xxx.xxx.255 broadcast, replaced backend with a new one.
+- Cannot send packages to xxx.xxx.xxx.255 broadcast address.
 ## Requirements
 - PHP
   - Sockets module
