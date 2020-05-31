@@ -1,4 +1,11 @@
 # phpWOL
+Forked from [castab/phpWOL](https://github.com/castab/phpWOL)
+## Modifications
+- Cannot send packages to xxx.xxx.xxx.255 broadcast, replaced backend with a new one.
+## Requirements
+- PHP
+  - Sockets module
+- WebServer
 ## A web-driven Wake-on-LAN Service
 php driven Wake on LAN webapp for remote computer startup
 
