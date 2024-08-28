@@ -1,23 +1,20 @@
 # phpWOL
 Forked from [castab/phpWOL](https://github.com/castab/phpWOL). Replaced the backend with PHP_WOL developed by [Radovan Janjic](https://radovanjanjic.com)
-
-## Modifications
-- Replace backend to be able to send Magic Packet to xxx.xxx.xxx.255 broadcast address.
-- Added shutdown and restart functionality using a lightweight WinRmClient (based on [vmatt/phpwinrm](https://github.com/vmatt/phpwinrm)).
-
 ## Features
+- Simple web frontend built with Bootstrap & PHP, which can be run on any web server 
+  - Tested on IIS, Apache & Nginx
 - Wake-on-LAN: Turn on computers remotely that have WoL enabled.
 - Shutdown: Remotely shut down Windows computers.
 - Restart: Remotely restart Windows computers.
 
 ## Requirements
-- PHP
+- PHP 8.0+
   - Sockets (for Wake-on-LAN)
   - CURL (for WinRM operations)
 - WebServer
 - Windows computers with WinRM enabled (for shutdown and restart operations)
 
-## A web-driven Wake-on-LAN and Remote Management Service
+## Overview
 This webapp allows for remote computer startup, shutdown, and restart operations.
 
 The Wake-on-LAN functionality works by having a PHP server within the network receive a command and then dynamically generate a WoL packet to specific computers in the same subnet. This circumvents the issue of many routers disabling/ignoring broadcast addresses from outside the local network.
@@ -25,8 +22,6 @@ The Wake-on-LAN functionality works by having a PHP server within the network re
 The shutdown and restart functionality uses Windows Remote Management (WinRM) to securely execute commands on remote Windows machines.
 
 ## Configuration
-
-### Configuring Hosts
 
 To add or modify hosts, edit the `hosts.php` file. Each host is represented by an associative array with the following keys:
 
@@ -65,32 +60,34 @@ You may also need to enable WoL in your computer's BIOS/UEFI settings.
 
 To enable WinRM, run the following commands in an elevated PowerShell:
 
-1. Enable WinRM:
+1. Enable & setup WinRM:
    ```
-   Enable-PSRemoting -Force
-   ```
-
-2. Configure WinRM to allow unencrypted traffic (use with caution, consider using HTTPS in production):
-   ```
+   winrm quickconfig -q
+   
+   # Configure WinRM to allow unencrypted traffic (use with caution, consider using HTTPS in production)
    winrm set winrm/config/service @{AllowUnencrypted="true"}
-   ```
-
-3. Configure WinRM to trust all hosts:
-   ```
+   
+   # Allow basic authentication
+   winrm set winrm/config/service/auth @{Basic="true"}
+   
+   # Set trusted hosts to allow connections from any host
    winrm set winrm/config/client @{TrustedHosts="*"}
    ```
 
-4. Restart the WinRM service:
+2. Restart the WinRM service:
    ```
    Restart-Service WinRM
    ```
 
 Note: These settings are for a basic setup. For production environments, consider using more secure configurations, such as HTTPS and specific trusted hosts.
 
+## Security Note
+While basic authentication is implemented, it's recommended to further secure this application, especially when exposed to the internet. Consider implementing stronger authentication methods and ensuring all communications are encrypted.
+
+When setting up winRM with Basic auth, make **extra** sure that you don't expose the machine on the internet!
+
 ## Credits
 - Toni Uebernickel <tuebernickel@whitestarprogramming.de>: Original WoL packet generator function
 - [Radovan Janjic](https://radovanjanjic.com): PHP_WOL backend
 - [vmatt/phpwinrm](https://github.com/vmatt/phpwinrm): Lightweight WinRM client
 
-## Security Note
-While basic authentication is implemented, it's recommended to further secure this application, especially when exposed to the internet. Consider implementing stronger authentication methods and ensuring all communications are encrypted.
