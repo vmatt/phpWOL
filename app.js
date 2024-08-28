@@ -1,44 +1,55 @@
-(function() {
-    angular.module('app', ['ngRoute'])
-    .controller('mainCtrl', ['$http', function($http) {
-        
-        vm = this;
-        vm.hosts = [];
 
-        vm.sendWake = function(host) {
-            _.forEach(vm.hosts, function(h) {
-                if (host == h) {
-                    $http.post('wol_action.php', h)
-                    .then(function(resp) {
-                        //console.log(resp);
-                        h.alert = true;
-                        h.alertSuccess = true;
-                        h.alertMessage = "Wake request sent.";
-                    }, function(error) {
-                        //console.log(error);
-                        h.alert = true;
-                        h.alertFailure = true;
-                        h.alertMessage = error.data.error;
-                    })
-                }
-            })
+function sendAction(macAddress, ipAddress, hostName, action, pw) {
+    if (action === 'Restart' || action === 'Shutdown') {
+        const password = prompt(`Enter the password to ${action.toLowerCase()} this host:`);
+        if (password !== pw) {
+            showAlert('Incorrect password. Action cancelled.', false);
+            return;
         }
+    }
 
-        $http.get('hosts.json').then(
-            function(resp) {
-                vm.hosts = resp.data.hosts;
-            },
-            function(error) {
-                console.log('Error fetching hosts');
-            }
-        );
-    }])
-    .config(['$routeProvider', function($routeProvider) {
-        $routeProvider
-        .when("/", {
-            templateUrl: "hostList.html",
-            controller: "mainCtrl",
-            controllerAs: "vm"
-        })
-    }])
-})();
+    const data = {
+        host: { macAddress, ipAddress, hostName },
+        action: action
+    };
+
+    fetch('wol_action.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'Error') {
+            showAlert(data.error, false);
+        } else if (data.status === 'OK') {
+            showAlert(data.message, true);
+        } else {
+            showAlert('Unexpected response from server', false);
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        showAlert('An unexpected error occurred', false);
+    });
+}
+
+function showAlert(message, isSuccess) {
+    const alertElement = document.getElementById('globalAlert');
+    const alertMessage = document.getElementById('alertMessage');
+    
+    alertElement.className = `alert alert-dismissible fade show alert-${isSuccess ? 'success' : 'danger'}`;
+    alertMessage.textContent = message;
+    alertElement.style.display = 'block';
+
+    setTimeout(() => {
+        hideAlert();
+    }, 5000);
+}
+
+function hideAlert() {
+    const alertElement = document.getElementById('globalAlert');
+    alertElement.style.display = 'none';
+}
