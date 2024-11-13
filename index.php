@@ -38,8 +38,8 @@ require_once 'hosts.php';
                             </div>
                             <div class="btn-group">
                                 <button type="button" onclick="sendAction('<?php echo $host['macAddress']; ?>', '<?php echo $host['ipAddress']; ?>', '<?php echo $host['hostName']; ?>', 'Wake', '')" class="btn btn-primary">Wake</button>
-                                <button type="button" onclick="sendAction('<?php echo $host['macAddress']; ?>', '<?php echo $host['ipAddress']; ?>', '<?php echo $host['hostName']; ?>', 'Restart', '<?php echo $host['pw']; ?>')" class="btn btn-warning">Restart</button>
-                                <button type="button" onclick="sendAction('<?php echo $host['macAddress']; ?>', '<?php echo $host['ipAddress']; ?>', '<?php echo $host['hostName']; ?>', 'Shutdown', '<?php echo $host['pw']; ?>')" class="btn btn-danger">Shutdown</button>
+                                <button type="button" onclick="sendAction('<?php echo $host['macAddress']; ?>', '<?php echo $host['ipAddress']; ?>', '<?php echo $host['hostName']; ?>', 'Restart')" class="btn btn-warning">Restart</button>
+                                <button type="button" onclick="sendAction('<?php echo $host['macAddress']; ?>', '<?php echo $host['ipAddress']; ?>', '<?php echo $host['hostName']; ?>', 'Shutdown')" class="btn btn-danger">Shutdown</button>
                             </div>
                         </div>
                     </div>

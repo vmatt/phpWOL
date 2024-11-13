@@ -1,17 +1,13 @@
 
-function sendAction(macAddress, ipAddress, hostName, action, pw) {
-    if (action === 'Restart' || action === 'Shutdown') {
-        const password = prompt(`Enter the password to ${action.toLowerCase()} this host:`);
-        if (password !== pw) {
-            showAlert('Incorrect password. Action cancelled.', false);
-            return;
-        }
-    }
-
-    const data = {
+function sendAction(macAddress, ipAddress, hostName, action) {
+       let data = {
         host: { macAddress, ipAddress, hostName },
         action: action
     };
+
+    if (action === 'Restart' || action === 'Shutdown') {
+        data.host.password = prompt(`Enter the password to ${action.toLowerCase()} this host:`);
+    }
 
     fetch('wol_action.php', {
         method: 'POST',

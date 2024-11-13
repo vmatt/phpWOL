@@ -1,9 +1,6 @@
 # phpWOL
 
-Let's say you have an office location, internal network only accessible via VPN.   
-Your users want to enable users to RDP into their workstations from home.  
-You can deploy this webapp on your office's internal server, provide the address to your users so they can wake up 
-the workstations, and then shut them down when not in use.
+Let's say you have an office location, internal network only accessible via VPN. Your users want to enable users to RDP into their workstations from home. You can deploy this webapp on your office's internal server, provide the address to your users so they can wake up the workstations, and then shut them down when not in use.
 
 ![img.png](img.png)
 
@@ -12,7 +9,9 @@ the workstations, and then shut them down when not in use.
   - Tested on IIS, Apache & Nginx
 - Wake-on-LAN: Turn on computers remotely that have WoL enabled.
 - Shutdown: Remotely shut down Windows computers.
+  - Requires Local windows user password
 - Restart: Remotely restart Windows computers.
+  - Requires Local windows user password
 
 ## Requirements
 - PHP 8.0+
@@ -24,19 +23,17 @@ the workstations, and then shut them down when not in use.
 ## Overview
 This webapp allows for remote computer startup, shutdown, and restart operations.
 
-The Wake-on-LAN functionality works by having a PHP server within the network receive a command and then dynamically
-generate a WoL packet to specific computers in the same subnet. This circumvents the issue of many routers disabling/ignoring broadcast addresses from outside the local network.
+The Wake-on-LAN functionality works by having a PHP server within the network receive a command and then dynamically generate a WoL packet to specific computers in the same subnet. This circumvents the issue of many routers disabling/ignoring broadcast addresses from outside the local network.
 
-The shutdown and restart functionality uses Windows Remote Management (WinRM) to securely execute commands on remote
-Windows machines.
+The shutdown and restart functionality uses Windows Remote Management (WinRM) to securely execute commands on remote Windows machines.
 ## Configuration
 
 To add or modify hosts, edit the `hosts.php` file. Each host is represented by an associative array with the following keys:
 
 - `hostName`: The name of the host (used for display purposes)
+  - Must match the username, for Restart & Shutdown functionality!
 - `macAddress`: The MAC address of the host's network interface
 - `ipAddress`: The IP address of the host
-- `pw`: The password for remote operations (shutdown/restart)
 
 Example:
 
@@ -46,7 +43,6 @@ $hosts = [
         "hostName" => "computer1",
         "macAddress" => "AA:AA:AA:AA:AA:AA",
         "ipAddress" => "192.168.1.11",
-        "pw" => "1234"
     ],
     // Add more hosts as needed
 ];
@@ -73,13 +69,13 @@ To enable WinRM, run the following commands in an elevated PowerShell:
    winrm quickconfig -q
    
    # Configure WinRM to allow unencrypted traffic (use with caution, consider using HTTPS in production)
-   winrm set winrm/config/service @{AllowUnencrypted="true"}
+   winrm set winrm/config/service '@{AllowUnencrypted="true"}'
    
    # Allow basic authentication
-   winrm set winrm/config/service/auth @{Basic="true"}
+   winrm set winrm/config/service/auth '@{Basic="true"}'
    
-   # Set trusted hosts to allow connections from any host
-   winrm set winrm/config/client @{TrustedHosts="*"}
+   # Set trusted hosts to allow connections from a specific host (use * to allow all hosts)
+   winrm set winrm/config/client '@{TrustedHosts="192.168.x.x"}'
    ```
 
 2. Restart the WinRM service:
@@ -90,8 +86,7 @@ To enable WinRM, run the following commands in an elevated PowerShell:
 Note: These settings are for a basic setup. For production environments, consider using more secure configurations, such as HTTPS and specific trusted hosts.
 
 ## Security Note
-- When setting up winRM with Basic auth, make **extra** sure that you don't expose the machine on the internet!  
-- The passwords stored in hosts.php will be exposed in the source code of index.php. Therefore, these passwords are not secure at all and can be extracted from HTML code. Instead of providing actual security, this approach merely adds an extra step for confirmation to restart/shutdown command.
+- When setting up winRM with Basic auth, make **extra** sure that you don't expose the machine on the internet!
 ## Credits
 Forked from [castab/phpWOL](https://github.com/castab/phpWOL). Replaced the backend with PHP_WOL developed by [Radovan Janjic](https://radovanjanjic.com)
 - Toni Uebernickel <tuebernickel@whitestarprogramming.de>: Original WoL packet generator function

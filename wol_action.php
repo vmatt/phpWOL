@@ -102,28 +102,28 @@ function wakeUp($mac, $broadcastIP)
     return "Wake-up command sent successfully.";
 }
 
-function restartComputer($ipAddress, $hostName)
+function restartComputer($ipAddress, $hostName, $pw)
 {
-    return executeShutdownCommand($ipAddress, $hostName, '/r');
+    return executeShutdownCommand($ipAddress, $hostName, $pw, '/r');
 }
 
-function shutdownComputer($ipAddress, $hostName)
+function shutdownComputer($ipAddress, $hostName, $pw)
 {
-    return executeShutdownCommand($ipAddress, $hostName, '/s');
+    return executeShutdownCommand($ipAddress, $hostName, $pw, '/s');
 }
 
-function executeShutdownCommand($ipAddress, $hostName, $shutdownFlag)
+function executeShutdownCommand($ipAddress, $hostName, $pw, $shutdownFlag)
 {
     $command = "shutdown {$shutdownFlag} /t 0";
     // $command = "ipconfig";
-    $client = new WinRmClient($ipAddress, $hostName, WINRM_PASSWORD);
+    $client = new WinRmClient($ipAddress, $hostName, $pw);
     $result = $client->execute_command($command);
     
     if (strpos($result, 'ERROR') !== false) {
         throw new Exception("Failed to send " . ($shutdownFlag === '/r' ? 'restart' : 'shutdown') . " command. Error: " . $result);
     }
     
-    return ($shutdownFlag === '/r' ? 'Restart' : 'Shutdown') . " command sent successfully. Result: " . $result;
+    return ($shutdownFlag === '/r' ? 'Restart' : 'Shutdown') . " Result: " . $result;
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -135,6 +135,9 @@ try {
     if (!isset($data['host']) || !isset($data['action'])) {
         throw new Exception('Invalid request.');
     }
+	if (!isset($data['host']['password'])) {
+        throw new Exception('Missing password.');
+    }
 
     $host = $data['host'];
     $action = $data['action'];
@@ -144,10 +147,10 @@ try {
             $message = wakeUp($host['macAddress'], $host['ipAddress']);
             break;
         case 'Restart':
-            $message = restartComputer($host['ipAddress'], $host['hostName']);
+            $message = restartComputer($host['ipAddress'], $host['hostName'], $host['password']);
             break;
         case 'Shutdown':
-            $message = shutdownComputer($host['ipAddress'], $host['hostName']);
+            $message = shutdownComputer($host['ipAddress'], $host['hostName'], $host['password']);
             break;
         default:
             throw new Exception('Invalid action.');
